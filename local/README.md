@@ -1,0 +1,65 @@
+# local
+
+Local dev infra for pithos-info: postgres, redis, minio, vault, and cassandra,
+all managed by the scripts in `scripts/`.
+
+## Layout
+
+```
+local/
+  apache/     cassandra install + symlink (not checked in)
+  configs/    checked-in service config (e.g. rbac-config.yaml)
+  data/       postgres/redis/minio data dirs (not checked in)
+  logs/       service logs + rotated archive (not checked in)
+  pids/       pidfiles for backgrounded services (not checked in)
+  metrics/    scratch space for metrics exports (not checked in)
+  scripts/    setup and lifecycle scripts (checked in)
+```
+
+Only `scripts/`, `configs/`, and `.gitignore` are checked into git.
+Everything else is generated locally — see `local/.gitignore`.
+
+## First-time setup
+
+```
+cd local/scripts
+./one-time-setup.sh   # creates data/logs/pids/metrics dirs, cassandra data dirs
+./prereqs.sh           # brew installs: postgresql@17, redis, minio, vault, cassandra deps
+```
+
+Cassandra itself isn't installed by these scripts. Download a release, extract
+it into `local/apache/`, and symlink it:
+
+```
+cd local/apache
+ln -s apache-cassandra-5.0.8 cassandra
+```
+
+`apache/setup.sh` exports `JAVA_HOME` and `CASSANDRA_HOME` for that install —
+update `JAVA_HOME` there if your Cassandra version needs a different JDK
+(Cassandra 5.0 wants Java 11 or 17).
+
+## Day to day
+
+```
+cd local/scripts
+./infra.sh start     # postgres, redis, minio, vault, cassandra
+./infra.sh status
+./infra.sh stop
+./infra.sh restart
+```
+
+To wipe local data and start clean:
+
+```
+./cleanup.sh
+```
+
+## Notes
+
+- `infra.sh` derives all paths from its own location, so it works whether
+  invoked directly or via a symlink/full path.
+- Cassandra's `data_file_directories`, `commitlog_directory`, `hints_directory`,
+  and `saved_caches_directory` in `apache/cassandra/conf/cassandra.yaml` are set
+  as paths relative to `local/apache/` (Cassandra is started with that as its
+  working directory) — they resolve to `local/apache/data/cassandra/*`.
