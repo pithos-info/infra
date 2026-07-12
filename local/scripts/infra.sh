@@ -10,6 +10,9 @@ PIDS_DIR="$LOCAL_DIR/pids"
 DATA_DIR="$LOCAL_DIR/data"
 PG_DATA_DIR="$DATA_DIR/postgres"
 MINIO_DATA_DIR="$DATA_DIR/minio"
+REDIS_DATA_DIR="$DATA_DIR/redis"
+APACHE_DIR="$LOCAL_DIR/apache"
+CASSANDRA_HOME="$APACHE_DIR/cassandra"
 
 BREW_PREFIX="$(brew --prefix)"
 PG_BIN="$BREW_PREFIX/opt/postgresql@17/bin"
@@ -20,6 +23,7 @@ MINIO_PORT=9000
 MINIO_CONSOLE_PORT=9001
 VAULT_PORT=8200
 VAULT_DEV_TOKEN="dev-root-token"
+CASSANDRA_PORT=9042
 
 echo "root + $ROOT_DIR"
 echo $LOCAL_DIR
@@ -92,9 +96,11 @@ start_redis() {
         return
     fi
     rotate_log redis
+    mkdir -p "$REDIS_DATA_DIR"
     redis-server \
         --daemonize yes \
         --port "$REDIS_PORT" \
+        --dir "$REDIS_DATA_DIR" \
         --logfile "$LOGS_DIR/redis.log" \
         --pidfile "$PIDS_DIR/redis.pid"
     echo "  redis: started (port $REDIS_PORT)"
@@ -196,6 +202,41 @@ status_vault() {
     fi
 }
 
+# ---- cassandra ----------------------------------------------------------------
+
+start_cassandra() {
+    if is_running cassandra; then
+        echo "  cassandra: already running"
+        return
+    fi
+    rotate_log cassandra
+    (
+        cd "$APACHE_DIR"
+        source "$APACHE_DIR/setup.sh"
+        "$CASSANDRA_HOME/bin/cassandra" -p "$PIDS_DIR/cassandra.pid"
+    ) > "$LOGS_DIR/cassandra.log" 2>&1
+    echo "  cassandra: started (port $CASSANDRA_PORT)"
+}
+
+stop_cassandra() {
+    if ! is_running cassandra; then
+        echo "  cassandra: not running"
+        rm -f "$PIDS_DIR/cassandra.pid"
+        return
+    fi
+    kill "$(read_pid cassandra)"
+    rm -f "$PIDS_DIR/cassandra.pid"
+    echo "  cassandra: stopped"
+}
+
+status_cassandra() {
+    if is_running cassandra; then
+        echo "  cassandra: running (port $CASSANDRA_PORT)"
+    else
+        echo "  cassandra: stopped"
+    fi
+}
+
 # ---- main -------------------------------------------------------------------
 
 case "${1:-}" in
@@ -205,9 +246,11 @@ case "${1:-}" in
         start_redis
         start_minio
         start_vault
+        start_cassandra
         ;;
     stop)
         echo "Stopping infra..."
+        stop_cassandra
         stop_vault
         stop_minio
         stop_redis
@@ -223,6 +266,7 @@ case "${1:-}" in
         status_redis
         status_minio
         status_vault
+        status_cassandra
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|status}" >&2
