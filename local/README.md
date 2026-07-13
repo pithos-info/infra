@@ -63,7 +63,7 @@ To wipe local data and start clean:
 Add this alias to `~/.zshrc` so it works from anywhere:
 
 ```bash
-alias cqlsh='CQLSH_PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11 /path/to/infra/local/apache/cassandra/bin/cqlsh'
+alias cqlsh='CQLSH_PYTHON=$(brew --prefix python@3.11)/bin/python3.11 /path/to/infra/local/apache/cassandra/bin/cqlsh'
 ```
 
 ## Notes
