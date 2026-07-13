@@ -211,20 +211,21 @@ start_cassandra() {
     fi
     rotate_log cassandra
     (
+        export JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home
         cd "$APACHE_DIR"
-        source "$APACHE_DIR/setup.sh"
         "$CASSANDRA_HOME/bin/cassandra" -p "$PIDS_DIR/cassandra.pid"
     ) > "$LOGS_DIR/cassandra.log" 2>&1
     echo "  cassandra: started (port $CASSANDRA_PORT)"
 }
 
 stop_cassandra() {
-    if ! is_running cassandra; then
-        echo "  cassandra: not running"
-        rm -f "$PIDS_DIR/cassandra.pid"
-        return
+    local pid
+    pid="$(read_pid cassandra)"
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+        kill "$pid"
     fi
-    kill "$(read_pid cassandra)"
+    # also clean up any stale processes holding Cassandra's ports
+    lsof -ti :9042,:7199 2>/dev/null | xargs kill -9 2>/dev/null || true
     rm -f "$PIDS_DIR/cassandra.pid"
     echo "  cassandra: stopped"
 }

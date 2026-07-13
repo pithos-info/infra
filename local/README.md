@@ -37,9 +37,9 @@ ln -s apache-cassandra-5.0.8 cassandra
 Then re-run `./setup.sh` — it will patch `cassandra.yaml` with absolute data
 paths on the first run that finds the symlink in place.
 
-`apache/setup.sh` exports `JAVA_HOME` and `CASSANDRA_HOME` for that install —
-update `JAVA_HOME` there if your Cassandra version needs a different JDK
-(Cassandra 5.0 wants Java 11 or 17).
+`infra.sh` sets `JAVA_HOME` to `openjdk@17` before starting Cassandra — update
+that line if your Cassandra version needs a different JDK (Cassandra 5.0 wants
+Java 11 or 17).
 
 ## Day to day
 

@@ -58,6 +58,7 @@ PACKAGES=(
     "minio"
     "liquibase"
     "maven"
+    "python@3.11"
 )
 
 if ! command -v brew &>/dev/null; then
