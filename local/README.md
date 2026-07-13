@@ -57,6 +57,15 @@ To wipe local data and start clean:
 ./cleanup.sh
 ```
 
+## cqlsh
+
+`cqlsh` requires Python 3.6–3.11. `setup.sh` installs `python@3.11` via Homebrew.
+Add this alias to `~/.zshrc` so it works from anywhere:
+
+```bash
+alias cqlsh='CQLSH_PYTHON=/opt/homebrew/opt/python@3.11/bin/python3.11 /path/to/infra/local/apache/cassandra/bin/cqlsh'
+```
+
 ## Notes
 
 - `infra.sh` derives all paths from its own location, so it works whether
