@@ -23,17 +23,19 @@ Everything else is generated locally — see `local/.gitignore`.
 
 ```
 cd local/scripts
-./one-time-setup.sh   # creates data/logs/pids/metrics dirs, cassandra data dirs
-./prereqs.sh           # brew installs: postgresql@17, redis, minio, vault, cassandra deps
+./setup.sh   # creates dirs, patches cassandra.yaml, brew-installs all deps
 ```
 
-Cassandra itself isn't installed by these scripts. Download a release, extract
+Cassandra itself isn't installed by this script. Download a release, extract
 it into `local/apache/`, and symlink it:
 
 ```
 cd local/apache
 ln -s apache-cassandra-5.0.8 cassandra
 ```
+
+Then re-run `./setup.sh` — it will patch `cassandra.yaml` with absolute data
+paths on the first run that finds the symlink in place.
 
 `apache/setup.sh` exports `JAVA_HOME` and `CASSANDRA_HOME` for that install —
 update `JAVA_HOME` there if your Cassandra version needs a different JDK
@@ -60,6 +62,5 @@ To wipe local data and start clean:
 - `infra.sh` derives all paths from its own location, so it works whether
   invoked directly or via a symlink/full path.
 - Cassandra's `data_file_directories`, `commitlog_directory`, `hints_directory`,
-  and `saved_caches_directory` in `apache/cassandra/conf/cassandra.yaml` are set
-  as paths relative to `local/apache/` (Cassandra is started with that as its
-  working directory) — they resolve to `local/apache/data/cassandra/*`.
+  and `saved_caches_directory` in `apache/cassandra/conf/cassandra.yaml` are
+  patched to absolute paths by `setup.sh` — they point to `local/apache/data/cassandra/*`.
